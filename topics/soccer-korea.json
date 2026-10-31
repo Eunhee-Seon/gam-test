@@ -5,7 +5,7 @@
   "blurb": "월드컵 속 한국, 챔스 속 한국 선수",
   "source": "openfootball worldcup.json · UEFA 경기 기록",
   "source_url": "https://github.com/openfootball/worldcup.json",
-  "caveat": "월드컵 전적에서 승부차기로 끝난 경기는 FIFA 방식대로 무승부로 세고, 3·4위전도 넣습니다. 챔스의 '한국 선수'는 UEFA 기록의 국적(KOR) 기준이고, 골은 예선을 뺀 본선 중 끝까지 치른 경기만 셉니다.",
+  "caveat": "승부차기로 끝난 경기는 FIFA 방식대로 무승부로 셌고 2026년 대회까지 넣어서, 다른 곳에서 본 전적과 다를 수 있습니다.",
   "questions": [
     {
       "id": "kr1",

@@ -5,7 +5,7 @@
   "blurb": "1992-93~2025-26, 34시즌의 기록",
   "source": "engsoccerdata · football.json",
   "source_url": "https://github.com/jalapic/engsoccerdata",
-  "caveat": "순위와 승점은 원본의 경기 결과로 다시 계산한 값입니다. 승점 감점은 engsoccerdata 감점 목록이 끝나는 2009-10 시즌까지만 반영했습니다(이후 감점은 우승팀·최다 승점과 무관). engsoccerdata 에 없는 2022-23 · 2025-26 시즌은 openfootball football.json 으로 채웠습니다. 1992-93~1994-95 시즌은 팀당 42경기였습니다.",
+  "caveat": "순위는 경기 결과로 직접 다시 계산했고 2010년 이후의 승점 감점은 넣지 않아, 일부 팀의 승점이 공식 순위표와 다를 수 있습니다.",
   "questions": [
     {
       "id": "epl1",

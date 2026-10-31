@@ -5,7 +5,7 @@
   "blurb": "퍼거슨의 시대부터 박지성까지",
   "source": "engsoccerdata · UEFA 경기 기록",
   "source_url": "https://github.com/jalapic/engsoccerdata",
-  "caveat": "리그 순위는 원본의 경기 결과로 다시 계산한 값입니다. 챔스 골은 UEFA 기록에서 예선을 뺀 본선 경기만 셉니다.",
+  "caveat": "챔스 골은 예선 경기 골을 빼고 센 숫자라, 예선까지 넣은 기록과는 다를 수 있습니다.",
   "questions": [
     {
       "id": "mu1",

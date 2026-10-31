@@ -5,7 +5,7 @@
   "blurb": "1955-56 유러피언컵부터 2025-26까지",
   "source": "UEFA 경기 기록 (match.uefa.com)",
   "source_url": "https://py.sportsdataverse.org/docs/soccer/reference/uefa",
-  "caveat": "골은 예선을 뺀 본선 경기, 그중 끝까지 치른 경기만 셉니다(1991-92 시즌까지의 유러피언컵은 전 라운드). 취소·중단·미개최 경기 35개의 기록과 자책골, 득점자가 기록되지 않은 본선 골 32개(모두 1995-96 시즌 이전)는 뺐습니다.",
+  "caveat": "골은 예선 경기를 빼고 셌고, 1995-96 시즌까지는 득점자가 비어 있는 골이 있어 옛 기록은 조금 다를 수 있습니다.",
   "questions": [
     {
       "id": "ucl1",
