@@ -1,6 +1,6 @@
 {
-  "title": "출근길 감 테스트",
-  "subtitle": "출근길 숫자, 당신의 감은 몇 점?",
+  "title": "축구, 얼마나 좋아하니?",
+  "subtitle": "맨유에 조금 치우쳐진 사람이 만든 퀴즈",
   "grades": [
     {
       "min": 90,
@@ -120,6 +120,48 @@
       "title": "얼마나 오래 사나",
       "blurb": "나라별 기대수명 1950~현재",
       "source": "Our World in Data"
+    },
+    {
+      "id": "soccer-manutd",
+      "emoji": "👹",
+      "title": "맨유",
+      "blurb": "퍼거슨의 시대부터 박지성까지",
+      "source": "engsoccerdata · UEFA 경기 기록"
+    },
+    {
+      "id": "soccer-epl",
+      "emoji": "🦁",
+      "title": "프리미어리그",
+      "blurb": "1992-93~2024-25, 33시즌의 기록",
+      "source": "engsoccerdata"
+    },
+    {
+      "id": "soccer-laliga",
+      "emoji": "🇪🇸",
+      "title": "라리가",
+      "blurb": "1928-29~2024-25, 스페인 1부 리그의 모든 경기",
+      "source": "engsoccerdata"
+    },
+    {
+      "id": "soccer-worldcup",
+      "emoji": "🏆",
+      "title": "월드컵",
+      "blurb": "1930~2026년, 23개 대회의 모든 경기",
+      "source": "openfootball worldcup.json"
+    },
+    {
+      "id": "soccer-korea",
+      "emoji": "🇰🇷",
+      "title": "한국 축구",
+      "blurb": "월드컵 속 한국, 챔스 속 한국 선수",
+      "source": "openfootball worldcup.json · UEFA 경기 기록"
+    },
+    {
+      "id": "soccer-ucl",
+      "emoji": "⭐",
+      "title": "챔피언스리그",
+      "blurb": "1955-56 유러피언컵부터 2025-26까지",
+      "source": "UEFA 경기 기록 (match.uefa.com)"
     }
   ]
 }

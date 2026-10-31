@@ -10,6 +10,7 @@
 실행 (저장소 최상위에서):
     python tools/fetch_all.py
     python tools/fetch_all.py --force
+    python tools/fetch_all.py soccer_      ← 이름이 soccer_ 로 시작하는 것만
 """
 from __future__ import annotations
 
@@ -124,6 +125,30 @@ SOURCES: list[tuple[str, str, str]] = [
      "?format=geojson&starttime=2000-01-01&endtime=2024-12-31"
      "&minmagnitude=3.0&minlatitude=33&maxlatitude=39.5"
      "&minlongitude=124&maxlongitude=132&limit=20000"),
+
+    # ── 축구 ──────────────────────────────────────────────────────
+    *[(f"soccer_{lg}.csv", f"{desc} 경기 결과 (engsoccerdata)",
+       f"https://raw.githubusercontent.com/jalapic/engsoccerdata/master/data-raw/{lg}.csv")
+      for lg, desc in (("england", "잉글랜드 리그 1888~2024-25"),
+                       ("spain", "라리가 1928-29~2024-25"),
+                       ("deductions", "잉글랜드 리그 승점 감점"))],
+
+    # engsoccerdata 에는 2022-23 잉글랜드 시즌이 통째로 빠져 있다. 그 시즌만 여기서 채운다
+    ("soccer_en1_2022.json", "프리미어리그 2022-23 경기 결과 (openfootball football.json)",
+     "https://raw.githubusercontent.com/openfootball/football.json/master/2022-23/en.1.json"),
+
+    *[(f"soccer_wc_{y}.json", f"{y} 월드컵 전 경기·득점자 (openfootball)",
+       f"https://raw.githubusercontent.com/openfootball/worldcup.json/master/{y}/worldcup-full.json")
+      for y in (*range(1930, 1939, 4), *range(1950, 2027, 4))],
+
+    # UEFA 경기 API 의 seasonYear 는 2006 까지 '시작 연도', 2008 부터 '끝 연도'다
+    # (2007 은 비어 있다). 파일 이름은 헷갈리지 않게 '끝 연도'로 통일한다
+    *[(f"soccer_ucl_{y + 1 if y <= 2006 else y}.json",
+       f"챔스 {(y if y <= 2006 else y - 1)}-{str((y + 1 if y <= 2006 else y))[2:]} "
+       "전 경기·득점자 (UEFA)",
+       "https://match.uefa.com/v5/matches"
+       f"?competitionId=1&seasonYear={y}&limit=500&offset=0&order=ASC")
+      for y in (*range(1955, 2007), *range(2008, 2027))],
 ]
 
 
@@ -158,9 +183,11 @@ def get(url: str, dest: Path, tries: int = 4) -> int:
 
 def main() -> int:
     force = "--force" in sys.argv
+    prefix = next((a for a in sys.argv[1:] if not a.startswith("--")), "")
+    sources = [s for s in SOURCES if s[0].startswith(prefix)]
     RAW.mkdir(parents=True, exist_ok=True)
     fail = 0
-    for name, desc, url in SOURCES:
+    for name, desc, url in sources:
         dest = RAW / name
         if dest.exists() and not force:
             print(f"  건너뜀  {name:<22} 이미 있음 ({dest.stat().st_size/1024:,.0f}KB)")
@@ -175,7 +202,7 @@ def main() -> int:
         time.sleep(0.4)          # 상대 서버에 예의를 지킨다
 
     print()
-    print(f"총 {len(SOURCES)}건 / 실패 {fail}건 · 저장 위치 {RAW}")
+    print(f"총 {len(sources)}건 / 실패 {fail}건 · 저장 위치 {RAW}")
     if fail:
         print("실패한 것은 잠시 뒤 다시 실행하면 대개 받아집니다.")
     return 1 if fail else 0
