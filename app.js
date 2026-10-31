@@ -106,8 +106,9 @@ function renderGrid() {
   INDEX.topics.forEach((t) => {
     const b = document.createElement("button");
     b.className = "tcard" + (t.id in done ? " done" : "");
+    b.dataset.id = t.id;          // 배치도에서 자리를 잡는 데 쓴다 (style.css)
     b.innerHTML =
-      `<span class="temoji">${t.emoji}</span>` +
+      `<span class="temoji">${BADGES[t.id] || t.emoji}</span>` +
       `<span class="ttitle">${t.title}</span>` +
       `<span class="tblurb">${t.blurb}</span>` +
       (t.id in done ? `<span class="tscore">${done[t.id]}점</span>` : "");

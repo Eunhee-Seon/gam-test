@@ -1,21 +1,25 @@
-/* 감 테스트 — 폰 세로 화면 기준.
-   큰 화면에서는 가운데 한 칸으로만 넓어집니다. */
+/* 축구, 얼마나 좋아하니? — 폰 세로 화면 기준.
+   큰 화면에서는 가운데 한 칸으로만 넓어집니다.
+   색은 셋만 쓴다: 잔디 초록 · 흰색 · 맨유 빨강. 글꼴은 Pretendard 하나. */
 
 :root {
-  --bg: #f7fafc;
-  --bg2: #e0f2fe;
-  --bg3: #dcfce7;
+  --grass1: #10442a;                /* 짙은 에메랄드 — 중계 화면의 잔디 */
+  --grass2: #134b2e;
+  --chalk: rgba(255,255,255,.38);   /* 경기장 흰 선 */
+  --bg: #ffffff;
   --card: #ffffff;
-  --line: #e3e8ef;
-  --ink: #142033;
-  --muted: #64748b;
-  --brand: #2563eb;
-  --brand-soft: #eaf1ff;
-  --ok: #059669;
-  --warn: #d97706;
-  --miss: #e11d48;
-  --shadow: 0 1px 2px rgba(20,32,51,.04), 0 6px 18px rgba(20,32,51,.06);
+  --line: #ececec;
+  --ink: #16181d;
+  --muted: #737780;
+  --brand: #DA291C;                 /* 맨유 빨강 */
+  --brand-soft: #fdf0ef;
+  --ok: #1a7f45;
+  --warn: #DA291C;
+  --miss: #c62828;
+  --shadow: 0 1px 2px rgba(0,0,0,.06), 0 10px 30px rgba(0,0,0,.18);
   --radius: 16px;
+  /* 흑백 축구공 */
+  --ball: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3CclipPath id='c'%3E%3Ccircle cx='50' cy='50' r='46'/%3E%3C/clipPath%3E%3Ccircle cx='50' cy='50' r='46' fill='white'/%3E%3Cg clip-path='url(%23c)' fill='%23111'%3E%3Ccircle cx='50' cy='3' r='14'/%3E%3Ccircle cx='95' cy='36' r='14'/%3E%3Ccircle cx='78' cy='89' r='14'/%3E%3Ccircle cx='22' cy='89' r='14'/%3E%3Ccircle cx='5' cy='36' r='14'/%3E%3C/g%3E%3Cpolygon points='50,33 66,45 60,64 40,64 34,45' fill='%23111'/%3E%3Cg stroke='%23111' stroke-width='3'%3E%3Cline x1='50' y1='33' x2='50' y2='16'/%3E%3Cline x1='66' y1='45' x2='82' y2='39'/%3E%3Cline x1='60' y1='64' x2='70' y2='77'/%3E%3Cline x1='40' y1='64' x2='30' y2='77'/%3E%3Cline x1='34' y1='45' x2='18' y2='39'/%3E%3C/g%3E%3Ccircle cx='50' cy='50' r='46' fill='none' stroke='%23111' stroke-width='4'/%3E%3C/svg%3E");
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -24,18 +28,21 @@
    .choices { display: grid } 같은 규칙이 있으면 el.hidden = true 가 무시된다. */
 [hidden] { display: none !important; }
 
+/* 배경 — 잔디 깎은 줄무늬. 경기장 선은 주제 배치도(.grid)에만 그린다 */
 html, body {
   margin: 0;
-  background:
-    radial-gradient(520px 360px at 0% -5%, var(--bg2), transparent 70%),
-    radial-gradient(480px 340px at 100% 0%, var(--bg3), transparent 70%),
-    var(--bg);
-  background-repeat: no-repeat;
+  background-color: var(--grass1);
+  background-image:
+    radial-gradient(90% 55% at 50% 0%, rgba(255,255,255,.10), transparent 70%),
+    linear-gradient(180deg, transparent 55%, rgba(0,0,0,.25)),
+    repeating-linear-gradient(180deg, var(--grass1) 0 90px, var(--grass2) 90px 180px);
+  overflow-x: hidden;
   color: var(--ink);
-  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
-               Pretendard, "Malgun Gothic", sans-serif;
+  font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
+               "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
   font-size: 16px;
   line-height: 1.6;
+  letter-spacing: -.2px;
   min-height: 100dvh;
 }
 
@@ -48,47 +55,75 @@ html, body {
 .view { animation: in .25s ease; }
 @keyframes in { from { opacity: 0; transform: translateY(6px) } to { opacity: 1 } }
 
-h1 { font-size: 30px; line-height: 1.25; margin: 6px 0 4px; letter-spacing: -.5px; }
-/* 제목 · 카드 제목은 호외 헤드라인처럼 굵은 고딕 */
-#title, .ttitle { font-family: "Black Han Sans", "Malgun Gothic", sans-serif; font-weight: 400; }
-#title { font-size: 46px; line-height: 1.05; letter-spacing: -1px; margin-top: 14px; }
-#subtitle { font-weight: 700; color: var(--ink); }
-h2 { font-size: 21px; line-height: 1.4; margin: 6px 0 22px; letter-spacing: -.3px; }
+/* 문항 · 결과는 잔디 위의 하얀 판 */
+#view-quiz, #view-result {
+  background: var(--card); border-radius: 22px; box-shadow: var(--shadow);
+  padding: 22px 20px 24px;
+}
+
+h1 { font-size: 30px; line-height: 1.25; margin: 6px 0 4px; }
+#title {
+  font-size: clamp(30px, 9vw, 40px); font-weight: 800; line-height: 1.15;
+  letter-spacing: -1.2px; margin: 16px 0 6px; color: #fff;
+}
+#subtitle { font-weight: 500; color: rgba(255,255,255,.75); margin: 0; font-size: 15px; }
+h2 { font-size: 20px; font-weight: 700; line-height: 1.45; margin: 6px 0 22px; letter-spacing: -.5px; }
 .muted { color: var(--muted); }
 .small { font-size: 13px; }
-.lead { font-size: 15px; color: var(--muted); margin-top: 14px; }
+.lead { font-size: 15px; color: #fff; margin: 22px 0 0; font-weight: 600; }
 .fineprint { font-size: 12px; color: var(--muted); text-align: center; margin-top: 14px; }
+/* 잔디 위에 바로 놓이는 작은 글씨 */
+#view-home .fineprint { color: rgba(255,255,255,.7); }
+#view-home .fineprint b { color: #fff; }
 
 /* 시작 화면 */
-.hero { padding: 30px 0 22px; }
+.hero { padding: 22px 0 6px; }
 .badge-day {
-  display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 2px;
-  color: var(--brand); background: var(--brand-soft);
-  border-radius: 999px; padding: 5px 12px;
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 600; letter-spacing: 1.5px; color: #fff;
+  background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.22);
+  border-radius: 999px; padding: 4px 11px 4px 5px;
+}
+.ball {
+  width: 16px; height: 16px; display: inline-block;
+  background: var(--ball) center / contain no-repeat;
 }
 .banner {
-  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
   padding: 13px 15px; font-size: 14px; margin: 0 0 8px;
 }
 .banner b { color: var(--brand); }
 
+/* 등번호 유니폼 줄 — 화면 폭 끝까지 흐른다 */
+.kits {
+  margin: 0 -20px 6px; overflow: hidden; padding: 6px 0;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+.kit-track { display: flex; gap: 26px; width: max-content; animation: kits 60s linear infinite; }
+.kit { width: 56px; height: 63px; flex: none; opacity: .8; }
+@keyframes kits { to { transform: translateX(-50%) } }
+
 /* 버튼 */
 button {
   font: inherit; font-weight: 700; border: 0; border-radius: 14px;
-  width: 100%; padding: 17px; cursor: pointer;
+  width: 100%; padding: 16px; cursor: pointer;
 }
-.primary { background: var(--brand); color: #fff; box-shadow: 0 6px 16px rgba(37,99,235,.22); }
-.primary:disabled { box-shadow: none; }
+.primary { background: var(--brand); color: #fff; transition: opacity .15s ease; }
+.primary:active { opacity: .85; }
 .primary:disabled { background: var(--line); color: var(--muted); cursor: default; }
-.ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); }
+.ghost { background: transparent; color: var(--ink); border: 1px solid #d9d9d9; }
 .actions { display: grid; gap: 10px; margin-top: 26px; }
 
-/* 진행 */
-.progress { height: 4px; background: var(--line); border-radius: 99px; overflow: hidden; }
+/* 진행 — 막대 끝에서 공이 굴러간다 */
+.progress { height: 4px; background: var(--line); border-radius: 99px; position: relative; margin-top: 6px; }
 #progress-bar {
-  height: 100%; width: 0; background: var(--brand);
-  transition: width .3s ease;
+  height: 100%; width: 0; border-radius: 99px; position: relative;
+  background: var(--brand); transition: width .3s ease;
+}
+#progress-bar::after {
+  content: ""; position: absolute; right: -8px; top: -6px; width: 16px; height: 16px;
+  background: var(--ball) center / contain no-repeat;
 }
 #q-count { margin: 12px 0 0; }
 
@@ -97,32 +132,30 @@ button {
 .choice {
   background: var(--card); border: 1px solid var(--line); color: var(--ink);
   border-radius: 14px; padding: 16px; text-align: left; font-weight: 600;
-  transition: transform .06s ease, border-color .15s ease;
+  transition: border-color .15s ease;
 }
-.choice:active { transform: scale(.985); }
 .choice[aria-pressed="true"] { border-color: var(--brand); background: var(--brand-soft); }
 
-/* 슬라이더 */
+/* 슬라이더 — 손잡이가 축구공 */
 .slider-out {
-  display: block; text-align: center; font-size: 40px; font-weight: 800;
-  letter-spacing: -1px; margin: 10px 0 18px;
+  display: block; text-align: center; font-size: 44px; font-weight: 800;
+  color: var(--brand); letter-spacing: -1.5px; margin: 6px 0 16px;
   font-variant-numeric: tabular-nums;
 }
 input[type=range] {
   width: 100%; -webkit-appearance: none; appearance: none;
   background: transparent; margin: 0;
 }
-input[type=range]::-webkit-slider-runnable-track {
-  height: 8px; border-radius: 99px; background: var(--line);
-}
+input[type=range]::-webkit-slider-runnable-track { height: 6px; border-radius: 99px; background: var(--line); }
 input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance: none; width: 34px; height: 34px; margin-top: -13px;
-  border-radius: 50%; background: var(--brand); border: 4px solid var(--bg);
+  -webkit-appearance: none; width: 34px; height: 34px; margin-top: -14px;
+  border-radius: 50%; border: 0; background: var(--ball) center / contain no-repeat;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,.25));
 }
-input[type=range]::-moz-range-track { height: 8px; border-radius: 99px; background: var(--line); }
+input[type=range]::-moz-range-track { height: 6px; border-radius: 99px; background: var(--line); }
 input[type=range]::-moz-range-thumb {
-  width: 30px; height: 30px; border-radius: 50%; background: var(--brand);
-  border: 4px solid var(--bg);
+  width: 32px; height: 32px; border-radius: 50%; border: 0;
+  background: var(--ball) center / contain no-repeat;
 }
 .slider-ends {
   display: flex; justify-content: space-between;
@@ -131,21 +164,20 @@ input[type=range]::-moz-range-thumb {
 
 /* 결과 — 점수 */
 .score-card {
-  background: var(--card); border: 1px solid var(--line);
-  border-radius: 22px; padding: 28px 20px; text-align: center; margin-bottom: 16px;
+  border: 1px solid var(--line); border-radius: 20px;
+  padding: 26px 20px; text-align: center; margin-bottom: 16px;
 }
-.grade-emoji { font-size: 44px; line-height: 1; }
+.grade-emoji { font-size: 40px; line-height: 1; }
 .score {
-  font-size: 54px; font-weight: 800; letter-spacing: -2px; margin-top: 6px;
-  font-variant-numeric: tabular-nums;
+  font-size: 60px; font-weight: 800; letter-spacing: -2.5px; margin-top: 6px; line-height: 1.1;
+  color: var(--brand); font-variant-numeric: tabular-nums;
 }
-.score span { font-size: 22px; color: var(--muted); font-weight: 700; }
-.grade { font-size: 19px; font-weight: 700; color: var(--brand); }
+.score span { font-size: 22px; color: var(--muted); font-weight: 600; letter-spacing: 0; }
+.grade { font-size: 18px; font-weight: 700; color: var(--ink); }
 
 /* 결과 — 촌평 */
 .ai {
-  background: linear-gradient(135deg, var(--brand-soft), var(--card));
-  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--brand-soft); border-radius: var(--radius);
   padding: 16px 17px; font-size: 14.5px; margin-bottom: 16px;
 }
 .ai .tag { font-size: 11px; color: var(--muted); letter-spacing: 1px; }
@@ -156,8 +188,8 @@ input[type=range]::-moz-range-thumb {
   background: var(--card); border: 1px solid var(--line);
   border-radius: var(--radius); padding: 18px 17px; margin-bottom: 12px;
 }
-.card h3 { font-size: 15px; margin: 0 0 4px; line-height: 1.45; }
-.react { font-size: 13px; color: var(--muted); margin: 0 0 14px; }
+.card h3 { font-size: 15px; font-weight: 700; margin: 0 0 4px; line-height: 1.45; }
+.react { font-size: 13px; color: var(--muted); margin: 0 0 14px; font-weight: 600; }
 .react.hit { color: var(--ok); }
 .react.miss { color: var(--miss); }
 
@@ -168,13 +200,13 @@ input[type=range]::-moz-range-thumb {
   font-size: 13px; font-weight: 700; text-align: right;
   font-variant-numeric: tabular-nums;
 }
-.bar { height: 9px; background: var(--line); border-radius: 99px; overflow: hidden; }
+.bar { height: 8px; background: var(--line); border-radius: 99px; overflow: hidden; }
 .bar > i {
   display: block; height: 100%; width: 0; border-radius: 99px;
   transition: width .85s cubic-bezier(.22,1,.36,1);
 }
-.bar.mine > i  { background: var(--muted); }
-.bar.real > i  { background: var(--ok); }
+.bar.mine > i  { background: #b9bcc2; }
+.bar.real > i  { background: var(--brand); }
 
 /* 택1 결과 */
 .pills { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
@@ -184,21 +216,22 @@ input[type=range]::-moz-range-thumb {
 }
 .pill.real { border-color: var(--ok); color: var(--ok); font-weight: 700; }
 .pill.mine { border-color: var(--miss); color: var(--miss); }
-.pill.both { border-color: var(--ok); background: rgba(52,211,153,.14); color: var(--ok); font-weight: 700; }
+.pill.both { border-color: var(--ok); background: rgba(26,127,69,.1); color: var(--ok); font-weight: 700; }
 
-/* 슬라이더 결과 — 손잡이가 정답으로 움직입니다 */
+/* 슬라이더 결과 — 공이 정답 자리로 굴러간다 */
 .track { position: relative; height: 34px; margin: 2px 0 12px; }
 .track .line {
   position: absolute; top: 15px; left: 0; right: 0; height: 4px;
   background: var(--line); border-radius: 99px;
 }
 .track .ghost, .track .live {
-  position: absolute; top: 8px; width: 18px; height: 18px; border-radius: 50%;
-  transform: translateX(-9px);
+  position: absolute; top: 7px; width: 20px; height: 20px; border-radius: 50%;
+  transform: translateX(-10px); padding: 0;
 }
-.track .ghost { background: var(--line); border: 2px solid var(--muted); }
+.track .ghost { background: var(--card); border: 2px solid #b9bcc2; }
 .track .live {
-  background: var(--ok); box-shadow: 0 0 0 4px rgba(52,211,153,.18);
+  background: var(--ball) center / contain no-repeat;
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,.25));
   transition: left 1s cubic-bezier(.22,1,.36,1);
 }
 
@@ -217,30 +250,80 @@ details[open] summary::after { content: " ▴"; }
   * { transition: none !important; animation: none !important; }
 }
 
-/* ── 주제 고르기 ──────────────────────────────── */
-.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin: 6px 4px 18px 0; }
-/* 카드 — 호외처럼 두꺼운 테두리, 각진 모서리, 뒤로 밀린 그림자. 누르면 그림자 쪽으로 들어간다 */
+/* ── 주제 고르기 — 경기장 반쪽 위의 선수 배치도 ────
+   위가 하프라인, 아래가 우리 골대. 위에서부터 공격수 2 · 미드필더 1 · 수비수 2 · 골키퍼 1.
+   선은 실제 경기장처럼 두껍고 진하게. */
+.pitch {
+  --pl: 4px solid rgba(255,255,255,.72);    /* 경기장 선 */
+  position: relative; margin: 8px 0 34px;
+  border: var(--pl); border-bottom-width: 5px;
+}
+.pl { position: absolute; pointer-events: none; }
+/* 하프라인 위의 센터서클 반원 */
+.pl-circle {
+  left: 50%; top: -4px; width: 128px; height: 64px; transform: translateX(-50%);
+  border: var(--pl); border-top: 0; border-radius: 0 0 64px 64px;
+}
+/* 페널티 박스 · 골 에어리어 · 페널티 아크 */
+.pl-box { left: 17%; right: 17%; bottom: 0; height: 196px; border: var(--pl); border-bottom: 0; }
+.pl-six { left: 34%; right: 34%; bottom: 0; height: 52px; border: var(--pl); border-bottom: 0; }
+.pl-arc {
+  left: 50%; bottom: 196px; width: 110px; height: 34px; transform: translateX(-50%);
+  border: var(--pl); border-bottom: 0; border-radius: 55px 55px 0 0 / 34px 34px 0 0;
+}
+/* 골대 — 골라인 바깥으로 그물 */
+.pl-goal {
+  left: 39%; right: 39%; bottom: -24px; height: 19px;
+  border: 3px solid #fff; border-top: 0;
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,.45) 0 1px, transparent 1px 6px),
+    repeating-linear-gradient(0deg, rgba(255,255,255,.45) 0 1px, transparent 1px 6px);
+}
+.grid {
+  /* minmax(0, 1fr) — 카드 안 글자 폭 때문에 칸이 화면 밖으로 밀리지 않게 */
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px 12px;
+  grid-template-areas:
+    "epl  epl  liga liga"
+    ".    wc   wc   .   "
+    "kor  kor  ucl  ucl "
+    ".    mu   mu   .   ";
+  position: relative; padding: 44px 12px 24px;
+}
+/* 카드 — 흰 바탕에 빨간 테두리만 */
 .tcard {
-  background: #fff3e8; border: 3px solid #f97316; color: var(--ink);
-  border-radius: 0; padding: 14px 12px; text-align: left;
-  display: flex; flex-direction: column; gap: 4px; min-height: 140px;
-  position: relative; box-shadow: 4px 4px 0 #ea580c;
-  transition: transform .08s ease, box-shadow .08s ease;
+  background: var(--card); border: 1.5px solid var(--brand); color: var(--ink);
+  border-radius: 16px; padding: 14px 13px 16px; text-align: left;
+  display: flex; flex-direction: column; gap: 3px; min-height: 140px;
+  position: relative; z-index: 1;
+  box-shadow: 0 10px 24px rgba(0,0,0,.28);
+  transition: transform .12s ease, box-shadow .12s ease;
 }
-.tcard:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 #ea580c; }
-.tcard:active { transform: translate(4px, 4px); box-shadow: 0 0 0 #ea580c; }
-.tcard.done { border-color: var(--ok); box-shadow: 4px 4px 0 var(--ok); }
-.temoji {
-  font-size: 22px; line-height: 1; width: 42px; height: 42px; margin-bottom: 6px;
-  display: grid; place-items: center; border-radius: 0; background: #ffe2c7;
-}
-.tcard.done .temoji { background: #e6f7f0; }
-.ttitle { font-size: 17px; line-height: 1.25; }
+.tcard:hover { transform: translateY(-2px); box-shadow: 0 12px 26px rgba(0,0,0,.22); }
+.tcard:active { transform: translateY(0); }
+.tcard.done { border-color: var(--ok); }
+.temoji { width: 40px; height: 40px; margin: 0 0 8px; display: grid; place-items: center; font-size: 24px; }
+.temoji svg { width: 100%; height: 100%; }
+.ttitle { font-size: 16.5px; font-weight: 800; line-height: 1.25; letter-spacing: -.5px; }
 .tblurb { font-size: 11.5px; color: var(--muted); line-height: 1.45; font-weight: 400; }
 .tscore {
-  position: absolute; top: 12px; right: 12px; font-size: 11px;
-  font-weight: 700; color: var(--ok);
+  position: absolute; top: 14px; right: 12px; font-size: 11px; font-weight: 700; color: var(--ok);
 }
+.tcard[data-id="soccer-epl"]      { grid-area: epl; }
+.tcard[data-id="soccer-laliga"]   { grid-area: liga; }
+.tcard[data-id="soccer-worldcup"] { grid-area: wc; }
+.tcard[data-id="soccer-korea"]    { grid-area: kor; }
+.tcard[data-id="soccer-ucl"]      { grid-area: ucl; }
+.tcard[data-id="soccer-manutd"]   { grid-area: mu; }
+/* 포지션 표시 — 오른쪽 아래 작은 글씨 */
+.tcard[data-id]::after {
+  position: absolute; right: 12px; bottom: 10px;
+  font-size: 10.5px; font-weight: 800; letter-spacing: 1px; color: var(--brand);
+}
+.tcard[data-id="soccer-epl"]::after, .tcard[data-id="soccer-laliga"]::after { content: "FW"; }
+.tcard[data-id="soccer-worldcup"]::after { content: "MF"; }
+.tcard[data-id="soccer-korea"]::after, .tcard[data-id="soccer-ucl"]::after { content: "DF"; }
+.tcard[data-id="soccer-manutd"]::after { content: "GK"; }
+#progress-note { color: rgba(255,255,255,.8); font-weight: 600; }
 
 .linkish {
   width: auto; background: none; color: var(--muted); border: 0;
@@ -249,11 +332,9 @@ details[open] summary::after { content: " ▴"; }
 
 /* ── 이 데이터의 한계 ─────────────────────────── */
 .caveat {
-  border: 1px dashed var(--warn); border-radius: 14px;
+  border: 1px solid var(--line); border-radius: 14px; background: #fafafa;
   padding: 14px 16px; font-size: 12.5px; color: var(--muted);
   line-height: 1.65; margin: 4px 0 10px;
 }
-.caveat b { color: var(--warn); }
+.caveat b { color: var(--ink); }
 #source a { color: var(--muted); }
-
-@media (min-width: 420px) { .grid { gap: 16px; } }

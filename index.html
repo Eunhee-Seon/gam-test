@@ -3,11 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>출근길 감 테스트 — 출근길 숫자, 당신의 감은 몇 점?</title>
-<meta name="description" content="공개 데이터로 만든 추측 게임. 10개 주제, 주제당 5문항.">
+<title>축구, 얼마나 좋아하니? — 맨유에 조금 치우쳐진 사람이 만든 퀴즈</title>
+<meta name="description" content="공개 축구 기록으로 만든 숫자 맞히기 퀴즈. 6개 주제, 주제당 5문항.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<!-- Anton 은 유니폼 이름·번호에만 쓴다 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&display=swap">
+<!-- ?v= 는 고칠 때마다 올린다. 브라우저가 예전 파일을 저장해 둔 채 쓰지 않게 한다 -->
+<link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
 
@@ -17,14 +20,24 @@
   <section id="view-home" class="view">
     <p id="shared-banner" class="banner" hidden></p>
     <div class="hero">
-      <div class="badge-day">공개 데이터</div>
-      <h1 id="title">출근길 감 테스트</h1>
+      <div class="badge-day"><span class="ball" aria-hidden="true"></span>공개 데이터</div>
+      <h1 id="title">축구, 얼마나 좋아하니?</h1>
       <p id="subtitle" class="muted"></p>
-      <p class="lead">주제를 하나 고르세요. 5문항, 1분이면 끝납니다.</p>
+      <p class="lead">주제를 골라보세요.</p>
     </div>
     <p id="progress-note" class="fineprint" style="text-align:left"></p>
-    <div id="topic-grid" class="grid"></div>
-    <p class="fineprint">모든 숫자는 공개 데이터에서 직접 계산했습니다.
+    <!-- 경기장 반쪽 — 위가 하프라인, 아래가 우리 골대. 주제 카드는 선수 자리에 놓인다 -->
+    <div class="pitch">
+      <span class="pl pl-circle" aria-hidden="true"></span>
+      <span class="pl pl-box" aria-hidden="true"></span>
+      <span class="pl pl-six" aria-hidden="true"></span>
+      <span class="pl pl-arc" aria-hidden="true"></span>
+      <span class="pl pl-goal" aria-hidden="true"></span>
+      <div id="topic-grid" class="grid"></div>
+    </div>
+    <!-- 등번호 유니폼 줄 — kits.js 가 채운다 -->
+    <div class="kits" aria-hidden="true"><div id="kit-track" class="kit-track"></div></div>
+    <p class="fineprint">모든 숫자는 공개 데이터에서 직접 계산했습니다.<br>
       정답 옆의 <b>근거 보기</b>를 누르면 어떻게 셌는지 나옵니다.</p>
   </section>
 
@@ -71,6 +84,7 @@
 
 </main>
 
-<script src="app.js"></script>
+<script src="kits.js?v=7"></script>
+<script src="app.js?v=7"></script>
 </body>
 </html>
