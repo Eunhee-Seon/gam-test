@@ -62,15 +62,15 @@
       "id": "soccer-epl",
       "emoji": "🦁",
       "title": "프리미어리그",
-      "blurb": "1992-93~2024-25, 33시즌의 기록",
-      "source": "engsoccerdata"
+      "blurb": "1992-93~2025-26, 34시즌의 기록",
+      "source": "engsoccerdata · football.json"
     },
     {
       "id": "soccer-laliga",
       "emoji": "🇪🇸",
       "title": "라리가",
-      "blurb": "1928-29~2024-25, 스페인 1부 리그의 모든 경기",
-      "source": "engsoccerdata"
+      "blurb": "1928-29~2025-26, 스페인 1부 리그의 모든 경기",
+      "source": "engsoccerdata · football.json"
     },
     {
       "id": "soccer-worldcup",

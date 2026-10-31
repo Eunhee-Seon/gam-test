@@ -5,7 +5,7 @@
   "blurb": "1930~2026년, 23개 대회의 모든 경기",
   "source": "openfootball worldcup.json",
   "source_url": "https://github.com/openfootball/worldcup.json",
-  "caveat": "득점자 이름은 원본 표기 그대로 셌습니다. 자책골은 빼고, 승부차기 골은 넣지 않았습니다.",
+  "caveat": "득점자는 이름으로 묶어 셌고, 대소문자·악센트만 다른 표기는 같은 선수로 합쳤습니다. 자책골은 빼고, 승부차기 골은 넣지 않았습니다.",
   "questions": [
     {
       "id": "wc1",

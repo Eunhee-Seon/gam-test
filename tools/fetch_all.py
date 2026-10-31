@@ -133,9 +133,14 @@ SOURCES: list[tuple[str, str, str]] = [
                        ("spain", "라리가 1928-29~2024-25"),
                        ("deductions", "잉글랜드 리그 승점 감점"))],
 
-    # engsoccerdata 에는 2022-23 잉글랜드 시즌이 통째로 빠져 있다. 그 시즌만 여기서 채운다
-    ("soccer_en1_2022.json", "프리미어리그 2022-23 경기 결과 (openfootball football.json)",
-     "https://raw.githubusercontent.com/openfootball/football.json/master/2022-23/en.1.json"),
+    # engsoccerdata 에 없는 시즌은 football.json 에서 채운다 —
+    # 잉글랜드 2022-23(통째로 빠짐), 2025-26(아직 반영 전), 스페인 2025-26
+    *[(f"soccer_{lg.replace('.', '')}_{y}.json",
+       f"{desc} {y}-{(y + 1) % 100:02d} 경기 결과 (openfootball football.json)",
+       f"https://raw.githubusercontent.com/openfootball/football.json/master/"
+       f"{y}-{(y + 1) % 100:02d}/{lg}.json")
+      for lg, desc, y in (("en.1", "프리미어리그", 2022), ("en.1", "프리미어리그", 2025),
+                          ("es.1", "라리가", 2025))],
 
     *[(f"soccer_wc_{y}.json", f"{y} 월드컵 전 경기·득점자 (openfootball)",
        f"https://raw.githubusercontent.com/openfootball/worldcup.json/master/{y}/worldcup-full.json")

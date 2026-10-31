@@ -16,6 +16,7 @@ import csv
 import io
 import json
 import sys
+import unicodedata
 import datetime as dt
 from collections import Counter
 from pathlib import Path
@@ -220,17 +221,55 @@ for r in load_csv("soccer_england.csv"):
 # 1986-87 라리가는 정규 리그 뒤 2차 리그(phase2)가 이어졌고 승점도 이어졌다. 둘 다 넣는다
 for r in load_csv("soccer_spain.csv"):
     ESP.setdefault(int(r["Season"]), []).append(r)
+# 감점 목록은 1부 리그 기준 2009-10 시즌에서 끝난다. 그 뒤의 감점은 반영되지 않는다
 for r in load_csv("soccer_deductions.csv"):
     if r["tier"] == "1" and r["country"] == "England":
         DED.setdefault(int(r["Season"]), {})[r["team"]] = int(r["deduction"])
-# engsoccerdata 에는 2022-23 시즌이 통째로 없다. football.json 에서 채운다.
-# 팀 이름은 뒤의 " FC" 만 떼면 engsoccerdata 표기와 같다
-if 2022 not in ENG:
-    ENG[2022] = [{"home": m["team1"].removesuffix(" FC"),
-                  "visitor": m["team2"].removesuffix(" FC"),
-                  "hgoal": m["score"]["ft"][0], "vgoal": m["score"]["ft"][1],
-                  "FT": "-".join(map(str, m["score"]["ft"])), "Date": m["date"]}
-                 for m in load_json("soccer_en1_2022.json")["matches"]]
+DED_LAST = max(DED)
+
+# engsoccerdata 에 없는 시즌은 football.json 에서 채운다.
+# 잉글랜드 2022-23 은 통째로 빠져 있고, 2025-26 은 두 리그 모두 아직 반영 전이다.
+# football.json 의 팀 이름은 대개 뒤의 " FC" 만 다르다. 그렇지 않은 팀만 여기 적는다
+FJ_NAMES = {
+    "Sunderland AFC": "Sunderland",
+    "Athletic Club": "Athletic Bilbao",
+    "Club Atlético de Madrid": "Atletico Madrid",
+    "Deportivo Alavés": "CD Alaves",
+    "RC Celta de Vigo": "Celta Vigo",
+    "RCD Espanyol de Barcelona": "Espanyol Barcelona",
+    "Rayo Vallecano de Madrid": "Rayo Vallecano",
+    "Real Betis Balompié": "Real Betis",
+    "Real Madrid CF": "Real Madrid",
+    "Real Sociedad de Fútbol": "Real Sociedad",
+}
+
+
+def fj_season(file, season, league):
+    """football.json 한 시즌 → engsoccerdata 와 같은 모양의 줄. 이름이 안 맞거나 결과가 빠지면 멈춘다."""
+    known = {r["home"] for rows in league.values() for r in rows}
+    out = []
+    for m in load_json(file)["matches"]:
+        s = m["score"]
+        ft = s if isinstance(s, list) else s["ft"]
+        teams = []
+        for n in (m["team1"], m["team2"]):
+            n = FJ_NAMES.get(n, n)
+            n = n if n in known else n.removesuffix(" FC")
+            assert n in known, f"{file}: '{n}' 를 원본 표기와 맞추지 못했습니다"
+            teams.append(n)
+        out.append({"Season": str(season), "Date": m["date"], "home": teams[0],
+                    "visitor": teams[1], "hgoal": ft[0], "vgoal": ft[1],
+                    "FT": f"{ft[0]}-{ft[1]}", "tier": "1", "round": "league"})
+    n_teams = len({r["home"] for r in out})
+    assert len(out) == n_teams * (n_teams - 1), f"{file}: 경기가 모자랍니다"
+    return out
+
+
+for season, file, league in ((2022, "soccer_en1_2022.json", ENG),
+                             (2025, "soccer_en1_2025.json", ENG),
+                             (2025, "soccer_es1_2025.json", ESP)):
+    if season not in league:
+        league[season] = fj_season(file, season, league)
 ENG_LAST, ESP_FIRST, ESP_LAST = max(ENG), min(ESP), max(ESP)
 # 전쟁으로 리그가 멈춘 시즌 말고는 빠진 시즌이 없어야 한다
 assert all(s in ENG for s in range(1946, ENG_LAST + 1)), "잉글랜드 원본에 빠진 시즌이 있습니다"
@@ -318,14 +357,21 @@ def wc_champion(year):
 
 
 def wc_goals(years):
-    """선수별 골 (원본 표기 이름 그대로). 자책골은 뺀다. 승부차기는 원본에서 따로 적혀 있어 들어오지 않는다."""
-    c = Counter()
+    """선수별 골. 자책골은 뺀다. 승부차기는 원본에서 따로 적혀 있어 들어오지 않는다.
+
+    원본에는 같은 선수가 'Olivier Giroud' · 'Olivier GIROUD' 처럼 대소문자만 다르게
+    적힌 경우가 있다. 대소문자·악센트를 무시하고 합치고, 가장 많이 쓴 표기로 보여 준다.
+    """
+    c, spell = Counter(), {}
     for y in years:
         for m in WC[y]:
             for g in m.get("goals1", []) + m.get("goals2", []):
                 if not g.get("owngoal"):
-                    c[g["name"]] += 1
-    return c
+                    k = unicodedata.normalize("NFKD", g["name"]).encode(
+                        "ascii", "ignore").decode().casefold()
+                    c[k] += 1
+                    spell.setdefault(k, Counter())[g["name"]] += 1
+    return Counter({spell[k].most_common(1)[0][0]: n for k, n in c.items()})
 
 
 # ── 챔스 원본 ────────────────────────────────────────────────────
@@ -349,17 +395,20 @@ def main_draw(end, m):
 
 
 UCL_GOALS = []          # (끝 연도, 선수 id, 이름, 국적) — 본선 골 하나에 한 줄
-UCL_NO_SCORER = 0       # 득점자가 비어 있는 본선 골
+UCL_NO_SCORER = []      # 득점자가 비어 있는 본선 골 — 골 하나에 그 시즌 끝 연도 하나
+# 끝까지 치른 경기(FINISHED)의 골만 센다. 취소·중단·미개최 경기에도 득점자가 적힌 것이 있다
+UCL_SKIPPED = Counter(m.get("status") for ms in UCL.values() for m in ms
+                      if m.get("status") != "FINISHED")
 for end, ms in UCL.items():
     for m in ms:
-        if not main_draw(end, m):
+        if not main_draw(end, m) or m.get("status") != "FINISHED":
             continue
         for g in (m.get("playerEvents") or {}).get("scorers", []):
             if g["goalType"] == "OWN":
                 continue
             p = g.get("player")
             if not p:
-                UCL_NO_SCORER += 1
+                UCL_NO_SCORER.append(end)
                 continue
             UCL_GOALS.append((end, p["id"], p["internationalName"], p.get("countryCode")))
 
@@ -416,7 +465,7 @@ topic(
                       "우승은 몇 번이었을까요?",
                len(fergie), "회", 0, 27, 1,
                f"1986-87~2012-13 시즌 잉글랜드 1부 리그 경기 결과로 시즌마다 순위를 "
-               f"다시 계산해(그 시즌 승점·동률 규칙, 승점 감점 반영) 맨유가 1위인 시즌을 "
+               f"다시 계산해(그 시즌 승점·동률 규칙, 감점 목록 반영) 맨유가 1위인 시즌을 "
                f"세면 {len(fergie)}회입니다",
                f"'퍼거슨 = 우승'으로 기억하지만, 부임 후 첫 리그 우승은 "
                f"{season_name(fergie[0])} 시즌에야 나왔습니다."),
@@ -432,14 +481,15 @@ topic(
                f"{len(mu_finals)}회({', '.join(ucl_season(e) for e in mu_finals)})입니다",
                f"우승한 결승({', '.join(ucl_season(e) for e in mu_won)})은 오래 남지만, "
                "진 결승은 금방 잊힙니다."),
-        ranged("mu4", "웨인 루니가 챔피언스리그 본선에서 넣은 골은 모두 몇 골일까요?",
+        ranged("mu4", f"{UCL_SPAN} 시즌, 웨인 루니가 챔피언스리그 본선에서 넣은 골은 "
+                      "모두 몇 골일까요?",
                rooney, "골", 0, 60, 1,
                f"{UCL_SPAN} 시즌 UEFA 경기 기록에서 예선을 뺀 본선 경기의 루니 득점"
                f"(자책골 제외)을 세면 {rooney}골입니다",
                "챔스는 한 시즌 경기 수가 리그보다 훨씬 적습니다. 리그 골 감각으로 "
                "짐작하면 크게 빗나갑니다."),
-        ranged("mu5", "박지성이 챔피언스리그 본선에서 넣은 골은 모두 몇 골일까요? "
-                      "(맨유 이전 소속팀 포함)",
+        ranged("mu5", f"{UCL_SPAN} 시즌, 박지성이 챔피언스리그 본선에서 넣은 골은 "
+                      "모두 몇 골일까요? (맨유 이전 소속팀 포함)",
                park, "골", 0, 20, 1,
                f"{UCL_SPAN} 시즌 UEFA 경기 기록에서 예선을 뺀 본선 경기의 박지성 득점"
                f"(자책골 제외)을 소속팀 구분 없이 세면 {park}골입니다",
@@ -462,7 +512,7 @@ t_0304, t_1516 = eng_table(2003), eng_table(2015)
 topic(
     "soccer-epl", "🦁", "프리미어리그",
     f"{EPL_SPAN}, {len(EPL)}시즌의 기록",
-    "engsoccerdata", "https://github.com/jalapic/engsoccerdata",
+    "engsoccerdata · football.json", "https://github.com/jalapic/engsoccerdata",
     [
         ranged("epl1", f"{EPL_SPAN} 시즌 프리미어리그에서 한 번이라도 우승한 클럽은 "
                        "몇 곳일까요?",
@@ -473,7 +523,8 @@ topic(
                "늘 상위권인 클럽과 실제로 우승한 클럽은 다릅니다."),
         ranged("epl2", f"{EPL_SPAN} 프리미어리그 한 시즌 최다 승점은?",
                epl_pts[0], "점", 70, 110, 1,
-               f"{EPL_SPAN} 시즌마다 팀별 승점(승리 3점, 승점 감점 반영)을 계산해 "
+               f"{EPL_SPAN} 시즌마다 팀별 승점(승리 3점, {season_name(DED_LAST)}까지의 "
+               f"감점 반영)을 계산해 "
                f"가장 높은 값은 {epl_pts[1]}의 {season_name(epl_pts[2])} 시즌 "
                f"{epl_pts[0]}점입니다",
                "38경기 시즌의 만점은 114점입니다. 상한을 알고 나면 감이 달라집니다."),
@@ -498,10 +549,11 @@ topic(
                f"{record(t_1516, 'Leicester City')}입니다",
                "'기적'이라는 말 때문에 아슬아슬하게 우승했을 거라고 짐작하기 쉽습니다."),
     ],
-    caveat="순위와 승점은 원본의 경기 결과로 다시 계산한 값이고, 승점 감점은 "
-           "engsoccerdata 감점 목록을 반영했습니다. engsoccerdata 에 없는 2022-23 "
-           "시즌은 openfootball football.json 으로 채웠습니다. 1992-93~1994-95 시즌은 "
-           "팀당 42경기였습니다.")
+    caveat="순위와 승점은 원본의 경기 결과로 다시 계산한 값입니다. 승점 감점은 "
+           f"engsoccerdata 감점 목록이 끝나는 {season_name(DED_LAST)} 시즌까지만 "
+           "반영했습니다(이후 감점은 우승팀·최다 승점과 무관). engsoccerdata 에 없는 "
+           "2022-23 · 2025-26 시즌은 openfootball football.json 으로 채웠습니다. "
+           "1992-93~1994-95 시즌은 팀당 42경기였습니다.")
 
 # ── 축구 3. 라리가 ───────────────────────────────────────────────
 RM, FCB = "Real Madrid", "FC Barcelona"
@@ -513,7 +565,9 @@ liga_pts = max(r[0] for r in liga_rows)
 liga_pts_by = [r for r in liga_rows if r[0] == liga_pts]
 liga_gf = max(r[1] for r in liga_rows)
 liga_gf_by = [r for r in liga_rows if r[1] == liga_gf]
+# 1986-87 2차 리그(phase2)의 맞대결도 넣는다 — 승점이 이어진 같은 시즌 리그로 본다
 clasico = [r for s in ESP for r in ESP[s] if {r["home"], r["visitor"]} == {RM, FCB}]
+clasico_p2 = sum(1 for r in clasico if r.get("round") == "phase2")
 cl_rm = sum(1 for r in clasico
             if (int(r["hgoal"]) - int(r["vgoal"])) * (1 if r["home"] == RM else -1) > 0)
 cl_d = sum(1 for r in clasico if r["hgoal"] == r["vgoal"])
@@ -524,7 +578,7 @@ liga_margin_games = [r for s in ESP for r in ESP[s]
 topic(
     "soccer-laliga", "🇪🇸", "라리가",
     f"{LIGA_SPAN}, 스페인 1부 리그의 모든 경기",
-    "engsoccerdata", "https://github.com/jalapic/engsoccerdata",
+    "engsoccerdata · football.json", "https://github.com/jalapic/engsoccerdata",
     [
         ranged("liga1", f"{LIGA_SPAN} 시즌 레알 마드리드의 라리가 우승은 몇 번일까요?",
                len(rm_titles), "회", 10, 45, 1,
@@ -546,11 +600,12 @@ topic(
                "한 경기 평균 3골이면 38경기에 114골입니다. 경기당으로 나눠 보면 감이 "
                "달라집니다."),
         ranged("liga4", f"{LIGA_SPAN} 시즌, 레알 마드리드와 바르셀로나의 라리가 맞대결"
-                        "(엘 클라시코)은 몇 번 있었을까요?",
+                        "(엘 클라시코)은 몇 번 있었을까요? (1986-87 2차 리그 포함, "
+                        "컵 대회 제외)",
                len(clasico), "경기", 100, 250, 1,
-               f"{LIGA_SPAN} 시즌 라리가 경기 중 두 팀이 만난 경기를 세면 "
-               f"{len(clasico)}경기(레알 {cl_rm}승 · {cl_d}무 · 바르사 "
-               f"{len(clasico) - cl_rm - cl_d}승)입니다",
+               f"{LIGA_SPAN} 시즌 라리가 경기(1986-87 2차 리그 {clasico_p2}경기 포함) 중 "
+               f"두 팀이 만난 경기를 세면 {len(clasico)}경기(레알 {cl_rm}승 · {cl_d}무 · "
+               f"바르사 {len(clasico) - cl_rm - cl_d}승)입니다",
                "한 시즌 두 번씩이라는 건 알아도, 그게 몇 시즌 쌓였는지는 잘 세지 "
                "않습니다."),
         ranged("liga5", f"{LIGA_SPAN} 라리가 한 경기 최다 점수 차는 몇 골일까요?",
@@ -563,8 +618,11 @@ topic(
     ],
     caveat="순위는 원본의 경기 결과로 다시 계산한 값이고, 승점이 같으면 맞대결 "
            "성적 → 골 득실로 가렸습니다. 1994-95 시즌까지는 승리가 2점이라 승점 "
-           "기록은 그 시즌 규칙 그대로입니다. 원본에는 1979-80 시즌 말라가 대 "
-           "살라망카 경기 하나가 빠져 있습니다.")
+           "기록은 그 시즌 규칙 그대로입니다. 1986-87 시즌은 정규 리그 뒤 2차 리그까지 "
+           "한 시즌으로 셉니다. engsoccerdata 에 없는 2025-26 시즌은 openfootball "
+           "football.json 으로 채웠습니다. 원본의 1979-80 시즌에는 말라가 대 살라망카 "
+           "경기가 빠져 있고, 말라가 대 알메리아 경기는 몰수 판정 스코어(1-0)로 "
+           "들어 있습니다.")
 
 # ── 축구 4. 월드컵 ───────────────────────────────────────────────
 WC_SPAN = f"{WC_FIRST}~{WC_LAST}년"
@@ -613,8 +671,8 @@ topic(
                f"(직전 {WC_LAST - 4}년 대회는 {len(WC[WC_LAST - 4])}경기)입니다",
                "참가국이 늘어난 것을 모르면 직전 대회 경기 수에 묶여 짐작하게 됩니다."),
     ],
-    caveat="득점자 이름은 원본 표기 그대로 셌습니다. 자책골은 빼고, 승부차기 골은 "
-           "넣지 않았습니다.")
+    caveat="득점자는 이름으로 묶어 셌고, 대소문자·악센트만 다른 표기는 같은 선수로 "
+           "합쳤습니다. 자책골은 빼고, 승부차기 골은 넣지 않았습니다.")
 
 # ── 축구 5. 한국 축구 ────────────────────────────────────────────
 kor_years = [y for y in sorted(WC)
@@ -624,7 +682,7 @@ for y in sorted(WC, reverse=True):
     if y not in kor_years:
         break
     streak.append(y)
-kor_games = [m for y in WC if y <= 2022 for m in WC[y]
+kor_games = [m for y in WC for m in WC[y]
              if KOR in (m["team1"], m["team2"])]
 
 
@@ -652,18 +710,18 @@ topic(
                f"거꾸로 세면 {len(streak)}회 연속({streak[-1]}~{streak[0]}년)입니다",
                "'매번 나가는 것 같다'는 느낌은 있어도, 그게 몇 회째인지는 대부분 "
                "모릅니다."),
-        ranged("kr2", f"{WC_FIRST}~2022년 월드컵 본선에서 한국은 몇 번 이겼을까요? "
+        ranged("kr2", f"{WC_SPAN} 월드컵 본선에서 한국은 몇 번 이겼을까요? "
                       "(승부차기는 무승부)",
                kor_w, "승", 0, 20, 1,
-               f"{WC_FIRST}~2022년 한국의 본선 경기를 세면(승부차기 경기는 무승부) "
+               f"{WC_SPAN} 한국의 본선 경기를 세면(승부차기 경기는 무승부) "
                f"{len(kor_games)}경기 {kor_w}승 {kor_d}무 "
                f"{len(kor_games) - kor_w - kor_d}패입니다",
                "2002년의 기억이 크게 남아서 승리 수를 실제보다 많게 짐작하기 "
                "쉽습니다."),
-        ranged("kr3", f"{WC_FIRST}~2022년 월드컵 본선에서 한국이 넣은 골은 모두 "
+        ranged("kr3", f"{WC_SPAN} 월드컵 본선에서 한국이 넣은 골은 모두 "
                       "몇 골일까요? (승부차기 제외)",
                kor_gf, "골", 10, 60, 1,
-               f"{WC_FIRST}~2022년 한국의 본선 {len(kor_games)}경기에서 한국 쪽 골"
+               f"{WC_SPAN} 한국의 본선 {len(kor_games)}경기에서 한국 쪽 골"
                f"(연장 포함, 승부차기 제외)을 더하면 {kor_gf}골입니다",
                "명장면 골 몇 개가 기억을 채워서, 전체 골 수는 감으로 잡기 어렵습니다."),
         ranged("kr4", f"{UCL_SPAN} 시즌 챔피언스리그 본선에서 한국 선수들이 넣은 골을 "
@@ -674,14 +732,16 @@ topic(
                f"({', '.join(f'{n} {v}' for n, v in kor_players.most_common())})입니다",
                "손흥민 한 명만 떠올리기 쉽지만, 챔스에서 골을 넣은 한국 선수는 "
                "여럿입니다."),
-        ranged("kr5", "손흥민이 챔피언스리그 본선에서 넣은 골은 모두 몇 골일까요?",
+        ranged("kr5", f"{UCL_SPAN} 시즌, 손흥민이 챔피언스리그 본선에서 넣은 골은 "
+                      "모두 몇 골일까요?",
                son, "골", 0, 40, 1,
                f"{UCL_SPAN} 시즌 UEFA 경기 기록에서 예선을 뺀 본선 경기의 손흥민 득점"
                f"(자책골 제외)을 소속팀 구분 없이 세면 {son}골입니다",
                "리그 득점 감각으로 짐작하면 챔스 골은 크게 빗나갑니다."),
     ],
-    caveat="월드컵 전적에서 승부차기로 끝난 경기는 FIFA 방식대로 무승부로 셉니다. "
-           "챔스의 '한국 선수'는 UEFA 기록의 국적(KOR) 기준입니다.")
+    caveat="월드컵 전적에서 승부차기로 끝난 경기는 FIFA 방식대로 무승부로 세고, "
+           "3·4위전도 넣습니다. 챔스의 '한국 선수'는 UEFA 기록의 국적(KOR) 기준이고, "
+           "골은 예선을 뺀 본선 중 끝까지 치른 경기만 셉니다.")
 
 # ── 축구 6. 챔피언스리그 ─────────────────────────────────────────
 rm_ucl = [end for end, m in FINALS.items() if ucl_winner(m) == RM]
@@ -725,8 +785,8 @@ topic(
                f"{UCL_SPAN} 시즌 결승 {len(FINALS)}경기 중 승부차기 기록이 있는 경기를 "
                f"세면 {len(pens)}번({', '.join(ucl_season(e) for e in pens)})입니다",
                "승부차기 결승은 장면이 강렬해서 실제보다 많게 기억되기도 합니다."),
-        ranged("ucl4", "크리스티아누 호날두가 챔피언스리그 본선에서 넣은 골은 모두 "
-                       "몇 골일까요?",
+        ranged("ucl4", f"{UCL_SPAN} 시즌, 크리스티아누 호날두가 챔피언스리그 본선에서 "
+                       "넣은 골은 모두 몇 골일까요?",
                cr7, "골", 50, 200, 1,
                f"{UCL_SPAN} 시즌 UEFA 경기 기록에서 예선을 뺀 본선 경기의 호날두 득점"
                f"(자책골 제외)을 소속팀 구분 없이 세면 {cr7}골입니다",
@@ -741,8 +801,10 @@ topic(
                f"의 {top_season}골입니다",
                "리그 득점왕 숫자에 익숙하면, 챔스 한 시즌 기록을 낮게 잡게 됩니다."),
     ],
-    caveat="골은 예선을 뺀 본선 경기만 셉니다(1991-92 시즌까지의 유러피언컵은 "
-           f"전 라운드). 자책골과, 득점자가 기록되지 않은 본선 골 {UCL_NO_SCORER}개는 "
+    caveat="골은 예선을 뺀 본선 경기, 그중 끝까지 치른 경기만 셉니다(1991-92 시즌까지의 "
+           "유러피언컵은 전 라운드). 취소·중단·미개최 경기 "
+           f"{sum(UCL_SKIPPED.values())}개의 기록과 자책골, 득점자가 기록되지 않은 본선 골 "
+           f"{len(UCL_NO_SCORER)}개(모두 {ucl_season(max(UCL_NO_SCORER))} 시즌 이전)는 "
            "뺐습니다.")
 
 # 축구만 다시 계산할 때는 여기서 파일을 쓰고 끝낸다. 아래 10주제는 건드리지 않는다
